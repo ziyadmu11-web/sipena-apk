@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIPENA - Sistem Penilaian Anti Nyontek</title>
+    <style>
+        :root { --primary: #4f46e5; --bg: #f8fafc; --text: #1e293b; --danger: #ef4444; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+        header { background: #ffffff; padding: 15px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
+        h1 { font-size: 1.25rem; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+        .container { flex: 1; padding: 20px; max-width: 600px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; justify-content: center; }
+        .card { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); text-align: center; }
+        .btn { background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; width: 100%; margin-top: 15px; }
+        .btn:active { opacity: 0.9; transform: scale(0.98); }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; text-align: center; }
+        .hidden { display: none !important; }
+        .alert { background: #fee2e2; color: #991b1b; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🛡️ SIPENA</h1>
+        <span id="clock" style="font-weight:600; font-size:0.9rem;">00:00:00</span>
+    </header>
+
+    <div class="container">
+        <!-- HALAMAN UTAMA -->
+        <div id="home-screen" class="card">
+            <h2>Ujian Sekolah Digital</h2>
+            <p style="color: #64748b; margin: 10px 0 20px 0;">Sistem Pengamanan Ujian Anti Nyontek & Lockdown Aktif.</p>
+            
+            <div class="alert" id="volume-warning">
+                ⚠️ Volume media HP Anda belum mencapai 50%! Mohon naikkan volume suara perangkat Anda.
+            </div>
+
+            <input type="text" id="token-input" placeholder="Masukkan Token Ujian (Contoh: SIPENA01)">
+            <input type="password" id="pin-input" placeholder="Masukkan PIN Pengawas">
+            
+            <button class="btn" onclick="startExam()">Mulai Ujian Sekarang</button>
+        </div>
+
+        <!-- HALAMAN UJIAN TERKUNCI -->
+        <div id="exam-screen" class="hidden" style="flex:1; display:flex; flex-direction:column;">
+            <div style="background:#1e293b; color:white; padding:10px 15px; display:flex; justify-content:space-between; align-items:center; border-radius:8px 8px 0 0;">
+                <span>📝 Sesi Ujian Aktif (Terkunci)</span>
+                <button onclick="tryExitExam()" style="background:var(--danger); color:white; border:none; padding:5px 12px; border-radius:4px; font-weight:bold; cursor:pointer;">KELUAR</button>
+            </div>
+            <iframe id="exam-frame" src="" style="width:100%; flex:1; border:none; background:white;"></iframe>
+        </div>
+    </div>
+
+    <script>
+        // Jam Real-time
+        setInterval(() => {
+            document.getElementById('clock').innerText = new Date().toLocaleTimeString('id-ID');
+        }, 1000);
+
+        // Cek Volume dari Android Bridge
+        function checkVolume() {
+            if (window.AndroidBridge && typeof window.AndroidBridge.getMediaVolumePercent === 'function') {
+                let vol = window.AndroidBridge.getMediaVolumePercent();
+                if (vol >= 50) {
+                    document.getElementById('volume-warning').classList.add('hidden');
+                } else {
+                    document.getElementById('volume-warning').classList.remove('hidden');
+                }
+            }
+        }
+        setInterval(checkVolume, 2000);
+
+        function startExam() {
+            let token = document.getElementById('token-input').value.trim();
+            let pin = document.getElementById('pin-input').value.trim();
+
+            if (!token || !pin) {
+                alert('Token dan PIN pengawas wajib diisi!');
+                return;
+            }
+
+            // Aktifkan Lockdown Sistem Android
+            if (window.AndroidBridge && typeof window.AndroidBridge.startLockdown === 'function') {
+                window.AndroidBridge.startLockdown();
+            }
+
+            // Ganti ke Layar Ujian (Contoh Google Form dummy / link Anda)
+            document.getElementById('home-screen').classList.add('hidden');
+            document.getElementById('exam-screen').classList.remove('hidden');
+            document.getElementById('exam-frame').src = 'https://docs.google.com/forms/d/e/1FAIpQLSc.../viewform'; // Ganti dengan link form Anda
+        }
+
+        function simulateCheatAttempt(reason) {
+            alert('PERINGATAN PELANGGARAN: ' + reason);
+        }
+
+        function tryExitExam() {
+            let password = prompt('Masukkan Password Pengawas untuk Keluar:');
+            if (password === 'GURU99') {
+                if (window.AndroidBridge && typeof window.AndroidBridge.stopLockdown === 'function') {
+                    window.AndroidBridge.stopLockdown();
+                }
+                document.getElementById('exam-screen').classList.add('hidden');
+                document.getElementById('home-screen').classList.remove('hidden');
+            } else if (password !== null) {
+                alert('Password pengawas salah!');
+            }
+        }
+    </script>
+</body>
+</html>
